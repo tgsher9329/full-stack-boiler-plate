@@ -44,4 +44,54 @@ router.post('/register', async (req, res) => {
     return res.status(201).json(newUser)
 })
 
+router.post('/login', async(req, res) => {
+  // ? check or username and password
+    // ? if it doesnt exist send error
+    if (!req.body.username || !req.body.password) {
+      return res.status(401).json({
+        error: "Please include username and password"
+      })
+    }
+  
+    
+    // ? find user from username
+    const user = await models.User.findOne({
+      where: {
+        username: req.body.username
+      }
+    })
+
+      // ? if no user, send error
+  if (!user) {
+    return res.status(404).json({
+      error: 'Username already in use'
+    })
+  }
+
+
+  //? check password
+  const match = await bcrypt.compare(req.body.password, user.password)
+    // ?if no match, send error
+  if (!match) {
+    return res.status(401).json({
+      error: 'Password incorrect'
+    })
+  }
+
+  // ? store user info in session
+  req.session.user = user;
+
+  // ? respond with user info
+  res.json(user)
+})
+router.get('/logout',(req, res) => {
+  // ? clear user data from session
+  req.session.user = null
+
+// ? send success response
+res.json({
+  success: 'Logged out successfully'
+})
+})
+
 module.exports = router;
